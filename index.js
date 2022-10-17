@@ -3,7 +3,6 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const Person = require('./models/person');
-const { mongo, default: mongoose } = require('mongoose');
 
 const app = express();
 
@@ -48,7 +47,6 @@ app.delete('/api/persons/:id', (request, response) => {
 });
 
 app.post('/api/persons', (request, response) => {
-  const id = Math.floor(Math.random() * 1000);
   const name = request.body.name;
   const number = request.body.number;
 
@@ -64,20 +62,16 @@ app.post('/api/persons', (request, response) => {
     });
   }
 
-  const nameExists = persons.find(person => person.name === name);
-  if (nameExists) {
-    return response.status(400).json({
-      error: 'name must be unique'
-    });
-  }
-
-  const person = {
+  const person = new Person({
     name: name,
     number: number,
-    id: id
-  };
-  persons = persons.concat(person);
-  return response.json(person);
+  });
+
+  person
+    .save()
+    .then(savedPerson => {
+      response.json(savedPerson);
+    });
 });
 
 const PORT = process.env.PORT;
