@@ -40,6 +40,24 @@ app.get('/api/persons/:id', (request, response) => {
   return response.status(404).end();
 });
 
+app.put('/api/persons/:id', (request, response, next) => {
+  const body = request.body;
+
+  const person = {
+    name: body.name,
+    number: body.number
+  };
+
+  Person
+    .findOneAndUpdate(request.params.id, person, { new: true })
+    .then(updatedPerson => {
+      response.json(updatedPerson);
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
 app.delete('/api/persons/:id', (request, response, next) => {
   Person
     .findByIdAndRemove(request.params.id)
