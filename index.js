@@ -14,30 +14,45 @@ morgan.token('data', (req, res) => JSON.stringify(req.body));
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'));
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
   Person
     .find({})
     .then(returnedPersons => {
       response.json(returnedPersons);
+    })
+    .catch(err => {
+      next(err);
     });
 });
 
-app.get('/info', (request, response) => {
-  response.send(`
-    <div>Phonebook has info for ${persons.length} people</div>
-    <br/>
-    <div>${new Date()}</div>
-  `);
+app.get('/info', (request, response, next) => {
+  Person
+    .find({})
+    .then(returnedPersons => {
+      const total = returnedPersons.length;
+      response.send(`
+        <div>Phonebook has info for ${total} ${total === 1 ? 'person' : 'people'}</div>
+        <br/>
+        <div>${new Date()}</div>
+      `);
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
-app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  const person = persons.find(person => person.id === id);
-
-  if (person) {
-    return response.json(person);
-  }
-  return response.status(404).end();
+app.get('/api/persons/:id', (request, response, next) => {
+  Person.findById(request.params.id)
+    .then(returnedPerson => {
+      if (returnedPerson) {
+        response.json(returnedPerson);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 app.put('/api/persons/:id', (request, response, next) => {
@@ -69,7 +84,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
     });
 });
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const name = request.body.name;
   const number = request.body.number;
 
@@ -94,6 +109,9 @@ app.post('/api/persons', (request, response) => {
     .save()
     .then(savedPerson => {
       response.json(savedPerson);
+    })
+    .catch(err => {
+      next(err);
     });
 });
 
