@@ -10,17 +10,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('build'));
 
-morgan.token('data', (req, res) => JSON.stringify(req.body));
+morgan.token('data', (req) => JSON.stringify(req.body));
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'));
 
 app.get('/api/persons', (request, response, next) => {
   Person
     .find({})
-    .then(returnedPersons => {
+    .then((returnedPersons) => {
       response.json(returnedPersons);
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
@@ -28,7 +28,7 @@ app.get('/api/persons', (request, response, next) => {
 app.get('/info', (request, response, next) => {
   Person
     .find({})
-    .then(returnedPersons => {
+    .then((returnedPersons) => {
       const total = returnedPersons.length;
       response.send(`
         <div>Phonebook has info for ${total} ${total === 1 ? 'person' : 'people'}</div>
@@ -36,39 +36,39 @@ app.get('/info', (request, response, next) => {
         <div>${new Date()}</div>
       `);
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
 
 app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id)
-    .then(returnedPerson => {
+    .then((returnedPerson) => {
       if (returnedPerson) {
         response.json(returnedPerson);
       } else {
         response.status(404).end();
       }
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
 
 app.put('/api/persons/:id', (request, response, next) => {
-  const body = request.body;
+  const [name, number] = request.body;
 
   const person = {
-    name: body.name,
-    number: body.number
+    name,
+    number,
   };
 
   Person
     .findByIdAndUpdate(request.params.id, person, { new: true, runValidators: true, content: 'query' })
-    .then(updatedPerson => {
+    .then((updatedPerson) => {
       response.json(updatedPerson);
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
@@ -76,36 +76,35 @@ app.put('/api/persons/:id', (request, response, next) => {
 app.delete('/api/persons/:id', (request, response, next) => {
   Person
     .findByIdAndRemove(request.params.id)
-    .then(result => {
+    .then(() => {
       response.status(204).end();
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
 
 app.post('/api/persons', (request, response, next) => {
-  const name = request.body.name;
-  const number = request.body.number;
+  const [name, number] = request.body;
 
   const person = new Person({
-    name: name,
-    number: number,
+    name,
+    number,
   });
 
   person
     .save()
-    .then(savedPerson => {
+    .then((savedPerson) => {
       response.json(savedPerson);
     })
-    .catch(err => {
+    .catch((err) => {
       next(err);
     });
 });
 
 const unknownEndPoint = (req, res) => {
   res.status(404).send({ error: 'Unknown endpoint' });
-}
+};
 
 app.use(unknownEndPoint);
 
@@ -113,17 +112,19 @@ const errorHandler = (err, req, res, next) => {
   console.log(err);
   if (err.name === 'CastError') {
     return res.status(400).send({ error: 'malformatted id' });
-  } else if (err.name === 'ValidationError') {
-    return res.status(400).json({ error: err.message });
-  } else if (err.name === 'MongoServerError') {
+  }
+  if (err.name === 'ValidationError') {
     return res.status(400).json({ error: err.message });
   }
-  next(err);
-}
+  if (err.name === 'MongoServerError') {
+    return res.status(400).json({ error: err.message });
+  }
+  return next(err);
+};
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT;
+const { PORT } = process.env;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

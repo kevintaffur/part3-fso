@@ -8,7 +8,7 @@ const url = `mongodb+srv://kevin:${password}@cluster0.7mnvd1t.mongodb.net/phoneb
 
 const personSchema = new mongoose.Schema({
   name: String,
-  number: String
+  number: String,
 });
 const Person = mongoose.model('Person', personSchema);
 
@@ -19,22 +19,21 @@ if (process.argv.length === 3) {
     .then(() => {
       Person
         .find({})
-        .then(persons => {
-          persons.forEach(person => {
+        .then((persons) => {
+          persons.forEach((person) => {
             console.log(`${person.name} ${person.number}`);
           });
-          mongoose.connection.close();
+          return mongoose.connection.close();
         });
     });
-  return;
 }
 
 mongoose
   .connect(url)
   .then(() => {
     const person = new Person({
-      name: name,
-      number: number
+      name,
+      number,
     });
 
     return person.save();
